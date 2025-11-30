@@ -1,0 +1,72 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - master  # main에 push될 때마다 배포
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. JDK 24 세팅
+      - name: Set up JDK 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "24"
+
+      # 3. Spring Boot 빌드 (Gradle 기준)
+      - name: Build Spring Boot jar
+        run: |
+          chmod +x ./gradlew || true
+          ./gradlew clean bootJar
+
+      # 4. Docker 이미지 빌드
+      - name: Build Docker image (backend)
+        run: |
+          docker build -t backend-app:latest .
+
+      # 5. 이미지를 tar 파일로 저장
+      - name: Save Docker image to tar
+        run: |
+          docker save backend-app:latest -o backend-app.tar
+
+      # 6. EC2로 tar 파일 복사 (Org secret 사용: HOST, USER, SSH_KEY)
+      - name: Copy image to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "backend-app.tar"
+          target: "/home/ubuntu/backend/"
+
+      # 7. EC2 안에서 컨테이너 재기동
+      - name: Run remote deploy commands on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/ubuntu/backend
+
+            # Docker 이미지 로드
+            docker load -i backend-app.tar
+
+            # 이전 컨테이너 정리
+            docker stop backend-app || true
+            docker rm backend-app || true
+
+            # 새 컨테이너 실행 (8080 포트 바인딩)
+            docker run -d \
+              --name backend-app \
+              --restart always \
+              -p 8080:8080 \
+              backend-app:latest

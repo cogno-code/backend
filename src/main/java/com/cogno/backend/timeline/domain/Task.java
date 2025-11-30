@@ -8,7 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "tasks")
+@Table(
+        name = "tasks",
+        indexes = {
+                @Index(name = "idx_task_user_date", columnList = "user_key, date")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,11 +25,21 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어느 날짜의 타임라인인지 (일단 날짜 단위로 저장)
+    /**
+     * 어느 유저의 타임라인인지
+     */
+    @Column(name = "user_key", nullable = false, length = 64)
+    private String userKey;
+
+    /**
+     * 어느 날짜의 타임라인인지 (일단 날짜 단위로 저장)
+     */
     @Column(nullable = false)
     private LocalDate date;
 
-    // 프론트에서 쓰는 이름 (TaskDefinition.name과 동일하게 맞춰서 사용)
+    /**
+     * 프론트에서 쓰는 이름 (TaskDefinition.name과 동일하게 맞춰서 사용)
+     */
     @Column(nullable = false, length = 100)
     private String name;
 
