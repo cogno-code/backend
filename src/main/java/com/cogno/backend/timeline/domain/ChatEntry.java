@@ -41,4 +41,6 @@ public class ChatEntry {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private SystemKind systemKind;
+
+
 }

@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -59,57 +61,56 @@ public class TimelineService {
         return new TimelineResponse(date, taskDtos, entryDtos);
     }
 
-    /**
-     * 특정 날짜 타임라인 전체를 덮어쓰기식으로 저장
-     * - 기존 Task / ChatEntry 다 지우고 새로 저장
-     */
     @Transactional
-    public void saveTimeline(TimelineSaveRequest req) {
-        LocalDate date = req.date();
+    public ChatEntryDto createChatEntry(ChatCreateRequest req) {
+        // 서버 기준 시간(Asia/Seoul) 사용
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
-        // 1) 기존 데이터 삭제
-        chatEntryRepository.deleteByDate(date);
-        taskRepository.deleteByDate(date);
+        ChatEntry entry = ChatEntry.builder()
+                .date(req.date())
+                .createdAt(now)
+                .text(req.text())
+                .type(req.type())
+                .taskName(req.taskName())
+                .systemKind(req.systemKind())
+                .build();
 
-        // 2) Task 저장
-        List<Task> tasks = req.tasks().stream()
-                .map(dto -> {
-                    Task task = Task.builder()
-                            .name(dto.name())
-                            .color(dto.color())
-                            .status(dto.status())
-                            .date(date)
-                            .build();
+        ChatEntry saved = chatEntryRepository.save(entry);
 
-                    dto.segments().forEach(segDto -> {
-                        TaskSegment seg = TaskSegment.builder()
-                                .task(task)
-                                .startTime(segDto.startTime())
-                                .endTime(segDto.endTime())
-                                .build();
-                        task.getSegments().add(seg);
-                    });
+        return new ChatEntryDto(
+                saved.getId(),
+                saved.getCreatedAt(),
+                saved.getText(),
+                saved.getType(),
+                saved.getTaskName(),
+                saved.getSystemKind()
+        );
+    }
 
-                    return task;
-                })
-                .toList();
+    // ✅ 채팅 수정
+    @Transactional
+    public ChatEntryDto updateChatEntry(Long id, ChatUpdateRequest req) {
+        ChatEntry entry = chatEntryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("ChatEntry not found: " + id));
 
-        taskRepository.saveAll(tasks);
+        entry.setText(req.text());
 
-        // 3) ChatEntry 저장
-        List<ChatEntry> entries = req.entries().stream()
-                .map(dto -> ChatEntry.builder()
-                        .date(date)
-                        .createdAt(dto.createdAt())
-                        .text(dto.text())
-                        .type(dto.type())
-                        .taskName(dto.taskName())
-                        .systemKind(dto.systemKind())
-                        .build()
-                )
-                .toList();
+        ChatEntry saved = chatEntryRepository.save(entry);
 
-        chatEntryRepository.saveAll(entries);
+        return new ChatEntryDto(
+                saved.getId(),
+                saved.getCreatedAt(),
+                saved.getText(),
+                saved.getType(),
+                saved.getTaskName(),
+                saved.getSystemKind()
+        );
+    }
+
+    // ✅ 채팅 삭제
+    @Transactional
+    public void deleteChatEntry(Long id) {
+        chatEntryRepository.deleteById(id);
     }
 
     /**
@@ -127,4 +128,6 @@ public class TimelineService {
                 .build();
         return taskDefinitionRepository.save(def);
     }
+
+
 }

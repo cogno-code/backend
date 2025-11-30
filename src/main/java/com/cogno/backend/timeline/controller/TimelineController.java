@@ -1,8 +1,7 @@
 package com.cogno.backend.timeline.controller;
 
 import com.cogno.backend.timeline.domain.TaskDefinition;
-import com.cogno.backend.timeline.dto.TimelineResponse;
-import com.cogno.backend.timeline.dto.TimelineSaveRequest;
+import com.cogno.backend.timeline.dto.*;
 import com.cogno.backend.timeline.service.TimelineService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,16 +26,6 @@ public class TimelineController {
     }
 
     /**
-     * POST /api/timeline
-     * body: TimelineSaveRequest
-     */
-    @PostMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void saveTimeline(@RequestBody TimelineSaveRequest request) {
-        timelineService.saveTimeline(request);
-    }
-
-    /**
      * GET /api/timeline/task-definitions
      * - 카테고리 목록 (프론트 TaskDefinition 초기값/관리용)
      */
@@ -55,5 +44,26 @@ public class TimelineController {
             @RequestParam String color
     ) {
         return timelineService.createTaskDefinition(name, color);
+    }
+
+    @PostMapping("/chat")
+    public ChatEntryDto createChatEntry(@RequestBody ChatCreateRequest req) {
+        return timelineService.createChatEntry(req);
+    }
+
+    // ✅ 채팅 수정
+    @PatchMapping("/chat/{id}")
+    public ChatEntryDto updateChatEntry(
+            @PathVariable Long id,
+            @RequestBody ChatUpdateRequest req
+    ) {
+        return timelineService.updateChatEntry(id, req);
+    }
+
+    // ✅ 채팅 삭제
+    @DeleteMapping("/chat/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteChatEntry(@PathVariable Long id) {
+        timelineService.deleteChatEntry(id);
     }
 }
