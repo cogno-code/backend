@@ -71,8 +71,14 @@ jobs:
             docker rm backend-app || true
 
             # 새 컨테이너 실행 (8080 포트 바인딩)
+            docker network create app-net || true
+            
+            docker stop backend-app || true
+            docker rm backend-app || true
+            
             docker run -d \
-              --name backend-app \
-              --restart always \
-              -p 8080:8080 \
-              backend-app:latest
+            --name backend-app \
+            --network app-net \
+            --restart always \
+            -p 8080:8080 \
+            backend-app:latest
