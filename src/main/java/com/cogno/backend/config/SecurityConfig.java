@@ -18,7 +18,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))   // ⭐ 추가
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/static/**", "/assets/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
@@ -26,22 +26,28 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth
-                        .defaultSuccessUrl("http://localhost:5173", true)
+                        // 🔥 배포: 로그인 성공 후 프론트 루트(/)로 리다이렉트
+                        .defaultSuccessUrl("/", true)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("http://localhost:5173")
+                        // 🔥 로그아웃 후에도 루트(/)로
+                        .logoutSuccessUrl("/")
                 );
 
         return http.build();
     }
 
-    // ⭐⭐ 진짜 핵심: Global CORS 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        // DEV: Vite 서버
+        // PROD: 굳이 필요 없지만 넣어둬도 무방
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://44.212.99.254"
+        ));
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
@@ -53,3 +59,4 @@ public class SecurityConfig {
         return source;
     }
 }
+
