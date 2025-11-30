@@ -36,6 +36,12 @@ jobs:
       - name: Save Docker image to tar
         run: |
           docker save backend-app:latest -o backend-app.tar
+          
+      - name: Fix permissions for tar file
+        run: |
+          ls -l
+          chmod 644 backend-app.tar
+          ls -l    
 
       # 6. EC2로 tar 파일 복사 (Org secret 사용: HOST, USER, SSH_KEY)
       - name: Copy image to EC2 via SCP
