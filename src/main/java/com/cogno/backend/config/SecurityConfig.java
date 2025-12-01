@@ -42,11 +42,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // DEV: Vite 서버
-        // PROD: 굳이 필요 없지만 넣어둬도 무방
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://44.212.99.254"
+                "http://localhost:5173",      // DEV
+                "https://cogno.kro.kr"        // PROD (https!)
         ));
         config.setAllowCredentials(true);
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"));
@@ -58,5 +56,6 @@ public class SecurityConfig {
 
         return source;
     }
+
 }
 
