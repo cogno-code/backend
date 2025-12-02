@@ -10,10 +10,13 @@ import com.cogno.backend.todo.dto.TodoItemDto;
 import com.cogno.backend.todo.dto.TodoListResponse;
 import com.cogno.backend.todo.repository.TodoItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,7 +44,24 @@ public class TodoService {
 
     @Transactional
     public TodoListResponse replaceTodos(String userKey, SaveTodosRequest request) {
-        LocalDate date = LocalDate.parse(request.getDate());
+        // 🔹 date 필드 검증 & 파싱
+        if (request.getDate() == null || request.getDate().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "date는 필수입니다."
+            );
+        }
+
+        LocalDate date;
+        try {
+            date = LocalDate.parse(request.getDate());
+        } catch (DateTimeParseException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "date는 yyyy-MM-dd 형식이어야 합니다: " + request.getDate(),
+                    e
+            );
+        }
 
         // 1) 기존 기록 삭제
         todoItemRepository.deleteByUserKeyAndTargetDate(userKey, date);
